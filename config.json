@@ -1,0 +1,75 @@
+{
+    "remoteConfigEnabled": true,
+    "switches": {
+        "out1": {
+            "mode": 0,
+            "impulseDuration": 500,
+            "outPin": 11
+        },
+        "out2": {
+            "mode": 0,
+            "impulseDuration": 500,
+            "outPin": 13
+        },
+        "out3": {
+            "mode": 0,
+            "impulseDuration": 500,
+            "present": true,
+            "outPin": 15
+        }
+    },
+    "inputs": {
+        "config": {
+            "debounce": 50,
+            "multiMaxDelay": 800
+        },
+        "inputPins": {
+            "inPin7": {
+                "pin": 7,
+                "present": true
+            }
+        },
+        "triggers": {
+            "tl1": {
+                "inPin": 7,
+                "event": 1,
+                "drives": [
+                    {
+                        "switch": "out1",
+                        "action": 0
+                    }
+                ]
+            },
+            "vtl1": {
+                "inPin": 7,
+                "event": 3,
+                "count": 1,
+                "drives": [
+                    {
+                        "switch": "out2",
+                        "action": 2
+                    }
+                ]
+            },
+            "vtl2": {
+                "inPin": 7,
+                "event": 3,
+                "count": 2,
+                "drives": [
+                    "out3"
+                ]
+            },
+            "vtl3": {
+                "inPin": 7,
+                "event": 3,
+                "count": 2,
+                "drives": [
+                    {
+                        "switch": "out2",
+                        "action": 1
+                    }
+                ]
+            }
+        }
+    }
+}

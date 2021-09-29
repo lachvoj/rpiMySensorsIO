@@ -1,0 +1,23 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "prepareDebug",
+            "type": "shell",
+            "command": "rsync -raP ${workspaceFolder}/pinCfg rpi4:~/MySensors && rsync -raP ${workspaceFolder}/mysgw.cpp rpi4:~/MySensors/examples_linux && rsync -aP ${workspaceFolder}/config.json rpi4:~/MySensors/config.json && ssh rpi4 'cd ~/MySensors && make -j4'"
+        },
+        {
+            "label": "rpiClean",
+            "type": "shell",
+            "command": "ssh rpi4 'cd ~/MySensors && make clean'"
+        },
+        {
+            "label": "rpiSyncFiles",
+            "type": "shell",
+            "command": "rsync -raP ${workspaceFolder}/pinCfg rpi4:~/MySensors && rsync -raP ${workspaceFolder}/mysgw.cpp rpi4:~/MySensors/examples_linux && rsync -aP ${workspaceFolder}/config.json rpi4:~/MySensors/config.json",
+            "problemMatcher": []
+        }
+    ]
+}
