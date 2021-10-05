@@ -19,13 +19,14 @@ class MySensorsPresent : public IMySensorsPresentable
 
   protected:
     int state_ = 0;
-    bool stateChanged_ = false;
+    bool stateChanged_ = false;\
     bool present_;
 
     MySensorsPresent(int id, const string &name, bool present = true);
     void sendMySensorsStatus();
 
   public:
+    virtual ~MySensorsPresent(){};
     int getId() const override;
     const char *getName() const override;
     virtual void rcvMessage(const MyMessage &message);

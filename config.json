@@ -16,6 +16,11 @@
             "impulseDuration": 500,
             "present": true,
             "outPin": 15
+        },
+        "out4": {
+            "mode": 0,
+            "present": true,
+            "outPin": "0.9"
         }
     },
     "inputs": {

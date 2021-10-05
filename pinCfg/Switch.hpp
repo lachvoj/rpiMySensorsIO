@@ -1,9 +1,12 @@
 #pragma once
 
 #include <cstdio>
+#include <memory>
 #include <string>
 
 #include "ILoopable.hpp"
+#include "IPinReader.hpp"
+#include "IPinWriter.hpp"
 #include "MySensorsPresent.hpp"
 
 using namespace std;
@@ -21,25 +24,24 @@ class Switch : public MySensorsPresent, public ILoopable
 
   private:
     const Mode mode_;
-    const uint8_t outPin_;
-    const uint8_t feedbackPin_;
 
     int impulseDuration_;
     uint64_t impulseStartedMs_;
 
-    bool readFeedbackPin();
-    void setOuputPin(bool val);
+    unique_ptr<IPinWriter> pinWriter_;
+    unique_ptr<IPinReader> fbPinReader_;
 
   public:
     Switch(
         int id,
         const string &name,
         bool present,
-        uint8_t outPin,
         Switch::Mode mode = Mode::CLASSIC,
-        int impulseDuration = 300,
-        uint8_t feedbackPin = 0x80);
-    ILoopable::Type getType() override;
+        uint8_t outPin = 0,
+        uint8_t outDevice = 0xFF,
+        uint8_t feedbackPin = 0,
+        uint8_t feedbackDev = 0xFF,
+        int impulseDuration = 300);
     void loop(uint64_t ms) override;
 };
 } // namespace pinCfg

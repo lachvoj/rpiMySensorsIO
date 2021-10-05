@@ -1,5 +1,7 @@
-#include <Arduino.h>
-
+#include "PinLocalReader.hpp"
+#include "PinLocalWriter.hpp"
+#include "PinSPIReader.hpp"
+#include "PinSPIWriter.hpp"
 #include "Switch.hpp"
 
 namespace pinCfg
@@ -8,28 +10,33 @@ Switch::Switch(
     int id,
     const string &name,
     bool present,
-    uint8_t outPin,
     Switch::Mode mode,
-    int impulseDuration,
-    uint8_t feedbackPin)
-: MySensorsPresent(id, name, present), mode_(mode), outPin_(outPin), feedbackPin_(feedbackPin),
-  impulseDuration_(impulseDuration)
+    uint8_t outPin,
+    uint8_t outDevice,
+    uint8_t feedbackPin,
+    uint8_t feedbackDev,
+    int impulseDuration)
+: MySensorsPresent(id, name, present), mode_(mode), impulseDuration_(impulseDuration)
 {
-    pinMode(outPin_, BCM2835_GPIO_FSEL_OUTP);
-    if (feedbackPin_ != 0)
-        pinMode(feedbackPin_, BCM2835_GPIO_FSEL_INPT);
-}
+    if (outDevice == 0xFF)
+        pinWriter_ = unique_ptr<PinLocalWriter>(new PinLocalWriter(outPin));
+    else
+        pinWriter_ = unique_ptr<PinSPIWriter>(new PinSPIWriter(outPin, outDevice));
 
-ILoopable::Type Switch::getType()
-{
-    return ILoopable::Type::SWITCH;
+    if (feedbackPin != 0)
+    {
+        if (feedbackDev == 0xFF)
+            fbPinReader_ = unique_ptr<PinLocalReader>(new PinLocalReader(feedbackPin));
+        else
+            fbPinReader_ = unique_ptr<PinSPIReader>(new PinSPIReader(feedbackPin, feedbackDev));
+    }
 }
 
 void Switch::loop(uint64_t ms)
 {
-    if (feedbackPin_ != 0)
+    if (fbPinReader_)
     {
-        state_ = (int)readFeedbackPin();
+        state_ = static_cast<int>(fbPinReader_->readPin());
     }
 
     if (!stateChanged_)
@@ -40,30 +47,19 @@ void Switch::loop(uint64_t ms)
         if (impulseStartedMs_ == 0)
         {
             impulseStartedMs_ = ms;
-            setOuputPin(true);
+            pinWriter_->writePin(true);
         }
         else if ((ms - impulseStartedMs_) >= impulseDuration_)
         {
             impulseStartedMs_ = 0;
             stateChanged_ = false;
-            setOuputPin(false);
+            pinWriter_->writePin(false);
         }
     }
     else if (mode_ == Mode::CLASSIC)
     {
         stateChanged_ = false;
-        setOuputPin((bool)state_);
+        pinWriter_->writePin((bool)state_);
     }
 }
-
-bool Switch::readFeedbackPin()
-{
-    return (bool)digitalRead(feedbackPin_);
-}
-
-void Switch::setOuputPin(bool val)
-{
-    digitalWrite(outPin_, (uint8_t)val);
-}
-
 } // namespace pinCfg

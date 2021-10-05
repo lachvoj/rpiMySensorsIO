@@ -13,6 +13,13 @@ Are the abstract configuration unit that specifies how output pin will behave.
         "impulseDuration": 500,
         "outPin": 11,
         "present": true
+    },
+    "out2": {
+        "mode": 1,
+        "impulseDuration": 500,
+        "outPin": "0.9",
+        "feedbackPin": 2,
+        "present": true
     }
 }
 ```
@@ -25,7 +32,18 @@ Are the abstract configuration unit that specifies how output pin will behave.
 
 **impulseDuration** - **(default: 300)** only applyed when **mode** is 1 (impulse) and its value specifies how long will impulse last
 
-**outPin** - HW IO pin which will be used as output pin
+**outPin**
+* number : HW IO pin which will be used as output pin 
+* string : 
+  * format "0" same as **number**
+  * format "0.0" first number means SPI0 connected device second number is HW output pin of SPI device.
+
+**feedbackPin**
+* not present or equal to 0: no feedback is used.
+* number : HW IO pin which will be used as feedback input pin
+* string :
+  * format "0" same as **number**
+  * format "0.0" first number means SPI0 connected device second number is HW input pin of SPI device.
 
 **present** - **(default: true)** boolean property which specify if this switch will be presented (usable) in MySensors controller
 
@@ -105,6 +123,3 @@ Abstract configuration unit which can specify how input actions are transformed 
 ### MySensors controller uploadable config
 Feature that will allow to upload configuration over MySensors network from MySensors controller to RPI.
 Started not finished yet.
-
-### SPI1 connected arduino boards
-Feature that will allow to extend IO whit aditional aruino board connected via SPI bus.

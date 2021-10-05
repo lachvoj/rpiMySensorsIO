@@ -44,7 +44,6 @@ class InPin : public MySensorsPresent, public ILoopable
     uint8_t getInputPin() const;
     void addSubscriber(shared_ptr<IPinSubscriber> &subscriber);
     void setState(int state) override;
-    ILoopable::Type getType() override;
     void loop(uint64_t ms) override;
 };
 

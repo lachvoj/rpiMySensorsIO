@@ -1,5 +1,6 @@
 #include <MySensors.h>
 #include <algorithm>
+#include <bitset>
 #include <cstdio>
 #include <iostream>
 #include <map>
@@ -10,12 +11,14 @@
 #include "Config.hpp"
 #include "ILoopable.hpp"
 #include "IMySensorsPresentable.hpp"
+#include "SPIArduino.hpp"
 
 #define MY_GATEWAY_MAX_CLIENTS 10
 
 vector<shared_ptr<pinCfg::ILoopable>> loopables;
 vector<shared_ptr<pinCfg::IMySensorsPresentable>> presentables;
 bool remoteConfigEnbled = true;
+pinCfg::SPIArduino spiArduino;
 
 void setup()
 {
@@ -38,6 +41,9 @@ void presentation()
 bool initialValueSent = false;
 void loop()
 {
+    // uint8_t spiOut = spiArduino.test(0b01101001);
+    // std::bitset<8> bSpiOut(spiOut);
+    // cout << "arduino responded: " << bSpiOut << endl;
     if (!initialValueSent)
     {
         // Send locally attached sensors data here

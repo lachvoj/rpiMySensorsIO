@@ -22,6 +22,18 @@ bool Config::fileExists(const string &filePath)
     return (stat(filePath.c_str(), &buffer) == 0);
 }
 
+void Config::splitString(const string &str, char delimiter, vector<string> &out)
+{
+    size_t start;
+    size_t end = 0;
+
+    while ((start = str.find_first_not_of(delimiter, end)) != string::npos)
+    {
+        end = str.find(delimiter, start);
+        out.push_back(str.substr(start, end - start));
+    }
+}
+
 void Config::readConfigFromFile(
     bool &remoteConfigEnbled,
     vector<shared_ptr<ILoopable>> &loopables,
@@ -57,23 +69,113 @@ void Config::readConfigFromFile(
     map<string, shared_ptr<Switch>> mSwitches;
     for (json::iterator itSw = config["switches"].begin(); itSw != config["switches"].end(); ++itSw)
     {
-        uint8_t outPin;
+        json outPin;
         try
         {
             outPin = itSw->at("outPin");
         }
         catch (const json::out_of_range &e)
         {
-            cerr << "Error: outPin not present in: " << *itSw << endl;
-            exit(3);
+            cerr << "Warning: outPin not present in: " << *itSw << endl;
+            continue;
         }
+
+        uint8_t nPin = 0;
+        uint8_t nDev = 0xFF;
+        static const char *invOutPinFormatMsg("Warning: outPin string has invalid format. Format: \"0.0\" or \"0\" "
+                                              "where first variant is <spi device>.<spi "
+                                              "device output pin> or second variant is just <output pin>");
+        if (outPin.is_string())
+        {
+            vector<string> vDevPin;
+            splitString(string(outPin), '.', vDevPin);
+            if (vDevPin.size() == 1)
+            {
+                try
+                {
+                    nPin = stoi(vDevPin[0]);
+                }
+                catch (const exception &e)
+                {
+                    cerr << invOutPinFormatMsg << endl;
+                    continue;
+                }
+            }
+            else if (vDevPin.size() > 1)
+            {
+                try
+                {
+                    nDev = stoi(vDevPin[0]);
+                    nPin = stoi(vDevPin[1]);
+                }
+                catch (const exception &e)
+                {
+                    cerr << invOutPinFormatMsg << endl;
+                    continue;
+                }
+            }
+        }
+        else if (outPin.is_number())
+            nPin = outPin;
+        else
+        {
+            cerr << invOutPinFormatMsg << endl;
+            continue;
+        }
+
+        json feedbackPin;
+        try
+        {
+            feedbackPin = itSw->at("feedbackPin");
+        }
+        catch (const json::out_of_range &e)
+        {
+        }
+
+        uint8_t nFbPin = 0;
+        uint8_t nFbDev = 0xFF;
+        static const char *invFbPinFormatMsg("Warning: feedbackPin string has invalid format. Format: \"0.0\" or \"0\" "
+                                             "where first variant is <spi device>.<spi "
+                                             "device input pin> or second variant is just <input pin>");
+        if (feedbackPin.is_string())
+        {
+            vector<string> vDevPin;
+            splitString(string(feedbackPin), '.', vDevPin);
+            if (vDevPin.size() == 1)
+            {
+                try
+                {
+                    nFbPin = stoi(vDevPin[0]);
+                }
+                catch (const exception &e)
+                {
+                    cerr << invFbPinFormatMsg << endl;
+                    continue;
+                }
+            }
+            else if (vDevPin.size() > 1)
+            {
+                try
+                {
+                    nFbDev = stoi(vDevPin[0]);
+                    nFbPin = stoi(vDevPin[1]);
+                }
+                catch (const exception &e)
+                {
+                    cerr << invFbPinFormatMsg << endl;
+                    continue;
+                }
+            }
+        }
+        else if (feedbackPin.is_number())
+            nFbPin = feedbackPin;
+
         Switch::Mode md = static_cast<Switch::Mode>(itSw->value("mode", Switch::Mode::CLASSIC));
         int impulseDuration = itSw->value("impulseDuration", 300);
-        uint8_t feedbackPin = itSw->value("feedbackPin", 0);
         bool present = itSw->value("present", true);
         uint8_t id = present ? presentables.size() : -1;
         shared_ptr<Switch> spSw =
-            make_shared<Switch>(id, itSw.key(), present, outPin, md, impulseDuration, feedbackPin);
+            make_shared<Switch>(id, itSw.key(), present, md, nPin, nDev, nFbPin, nFbDev, impulseDuration);
         mSwitches[itSw.key()] = spSw;
         loopables.push_back(spSw);
         if (present)
@@ -91,7 +193,7 @@ void Config::readConfigFromFile(
         if (inputsConfig.find("multiMaxDelay") != inputsConfig.end())
             InPin::setMulticlickMaxDelayMs((uint64_t)inputsConfig["multiMaxDelay"]);
     }
-    catch (const std::exception &e)
+    catch (const exception &e)
     {
     }
 
@@ -150,7 +252,7 @@ void Config::readConfigFromFile(
         {
             drives = trigger.at("drives");
         }
-        catch (const std::exception &e)
+        catch (const exception &e)
         {
             cout << "WARNING: Trigger: " << endl << trigger << endl << "Doesn't contain \"drives\" element." << endl;
             continue;
@@ -172,7 +274,7 @@ void Config::readConfigFromFile(
                     {
                         sSw = sw.at("switch");
                     }
-                    catch (const std::exception &e)
+                    catch (const exception &e)
                     {
                         cout << "WARNING: drives element : " << endl
                              << sw << endl
@@ -232,8 +334,11 @@ bool Config::verifyConfiguration(const string &confStr, stringstream &err)
     catch (json::parse_error &e)
     {
         err << "message: " << e.what() << endl
-           << "exception id: " << e.id << endl
-           << "byte position of error: " << e.byte << endl;
+            << "exception id: " << e.id << endl
+            << "byte position of error: " << e.byte << endl;
+        return false;
     }
+
+    return true;
 }
 } // namespace pinCfg

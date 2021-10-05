@@ -23,6 +23,7 @@ class Config
 {
   private:
     static bool fileExists(const string &filePath);
+    static void splitString(const string& str, char delimiter, vector<string> &out);
 
   public:
     static void readConfigFromFile(

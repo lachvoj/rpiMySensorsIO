@@ -42,11 +42,6 @@ void InPin::setState(int state)
         sendMySensorsStatus();
 }
 
-ILoopable::Type InPin::getType()
-{
-    return ILoopable::Type::PIN;
-}
-
 void InPin::loop(uint64_t ms)
 {
     enum Change
