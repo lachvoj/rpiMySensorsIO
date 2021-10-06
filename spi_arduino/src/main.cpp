@@ -1,4 +1,6 @@
+#include <Arduino.h>
 #include <SPI.h>
+// #include <ArduinoJson.h>
 
 #define DEBUG 1
 
@@ -6,12 +8,21 @@
 // Pins 0 to 9 can be used, pin 10 can be used for SS (but can be used if that's not required)
 bool pin_output[11];
 
+byte set_digital_pin(byte address, bool high_value);
+byte read_digital_pin(byte address);
+byte read_analog_pin(byte address);
+
 void setup()
 {
+    // char jsn[] = "{\"test\": 3}";
+    // DynamicJsonDocument doc(1024);
+    // deserializeJson(doc, jsn);
+    
     // enable console log
 #ifdef DEBUG
     Serial.begin(115200);
     Serial.print("Serial setup finished.\n");
+    // serializeJson(doc, Serial);
 #endif
 
     // by default all pins are inputs
