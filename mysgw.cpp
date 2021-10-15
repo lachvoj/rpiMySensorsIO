@@ -14,6 +14,7 @@
 #include "SPIArduino.hpp"
 
 #define MY_GATEWAY_MAX_CLIENTS 10
+#define MY_DEBUG
 
 vector<shared_ptr<pinCfg::ILoopable>> loopables;
 vector<shared_ptr<pinCfg::IMySensorsPresentable>> presentables;
@@ -39,11 +40,14 @@ void presentation()
 }
 
 bool initialValueSent = false;
+#ifdef MY_DEBUG
+uint64_t lastLoopMs = (uint64_t)millis();
+uint64_t msPerPeriod = 0;
+uint32_t loopCount = 0;
+#define LOOP_AVG_COUNT 1000
+#endif
 void loop()
 {
-    // uint8_t spiOut = spiArduino.test(0b01101001);
-    // std::bitset<8> bSpiOut(spiOut);
-    // cout << "arduino responded: " << bSpiOut << endl;
     if (!initialValueSent)
     {
         // Send locally attached sensors data here
@@ -60,13 +64,24 @@ void loop()
         {
             loopable->loop(miliseconds);
         }
-        // cout << "loop ms: " << miliseconds << endl;
+#ifdef MY_DEBUG
+        if (loopCount == LOOP_AVG_COUNT)
+        {
+            uint32_t avg = msPerPeriod / LOOP_AVG_COUNT;
+            cout << "Avg loop time per " << LOOP_AVG_COUNT << " loops is: " << avg << "ms" << endl;
+            loopCount = 0;
+            msPerPeriod = 0;
+        }
+        msPerPeriod += miliseconds - lastLoopMs;
+        lastLoopMs = miliseconds;
+        loopCount++;
+#endif
     }
 }
 
 void receive(const MyMessage &message)
 {
-#if MY_DEBUG
+#ifdef MY_DEBUG
     if (message.isAck())
         cout << "ACK from gateway.";
 #endif

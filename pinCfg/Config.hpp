@@ -9,12 +9,14 @@
 
 #include "ILoopable.hpp"
 #include "IMySensorsPresentable.hpp"
+#include "json.hpp"
 
 #ifndef PINCFGPATH
 #define PINCFGPATH "./config.json"
 #endif
 
 using namespace std;
+using json = nlohmann::json;
 
 namespace pinCfg
 {
@@ -22,8 +24,11 @@ namespace pinCfg
 class Config
 {
   private:
+    static const char *invPinFormatMsg;
+    static const char *invFbPinFormatMsg;
     static bool fileExists(const string &filePath);
-    static void splitString(const string& str, char delimiter, vector<string> &out);
+    static void splitString(const string &str, char delimiter, vector<string> &out);
+    static int getPinFromJson(uint8_t &pin, uint8_t &dev, const json &pinJson);
 
   public:
     static void readConfigFromFile(

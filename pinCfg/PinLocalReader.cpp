@@ -7,10 +7,11 @@ namespace pinCfg
 PinLocalReader::PinLocalReader(uint8_t inPin) : inPin_(inPin)
 {
     pinMode(inPin_, BCM2835_GPIO_FSEL_INPT);
+    digitalWrite(inPin_, HIGH); // enabling pullup
 }
 
 bool PinLocalReader::readPin()
 {
-    return (bool)digitalRead(inPin_);
+    return static_cast<bool>(digitalRead(inPin_));
 }
 } // namespace pinCfg

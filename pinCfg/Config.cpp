@@ -9,12 +9,16 @@
 #include "InPin.hpp"
 #include "Switch.hpp"
 #include "Trigger.hpp"
-#include "json.hpp"
 
-using json = nlohmann::json;
 
 namespace pinCfg
 {
+const char *Config::invPinFormatMsg("Warning: pin string has invalid format. Format: \"0.0\" or \"0\" "
+                                    "where first variant is <spi device>.<spi "
+                                    "device output pin> or second variant is just <output pin>");
+const char *Config::invFbPinFormatMsg("Warning: feedbackPin string has invalid format. Format: \"0.0\" or \"0\" "
+                                      "where first variant is <spi device>.<spi "
+                                      "device input pin> or second variant is just <input pin>");
 
 bool Config::fileExists(const string &filePath)
 {
@@ -32,6 +36,46 @@ void Config::splitString(const string &str, char delimiter, vector<string> &out)
         end = str.find(delimiter, start);
         out.push_back(str.substr(start, end - start));
     }
+}
+
+int Config::getPinFromJson(uint8_t &pin, uint8_t &dev, const json &pinJson)
+{
+    if (pinJson.is_string())
+    {
+        vector<string> vDevPin;
+        splitString(string(pinJson), '.', vDevPin);
+        if (vDevPin.size() == 1)
+        {
+            try
+            {
+                pin = stoi(vDevPin[0]);
+            }
+            catch (const exception &e)
+            {
+                return -1;
+            }
+        }
+        else if (vDevPin.size() > 1)
+        {
+            try
+            {
+                dev = stoi(vDevPin[0]);
+                pin = stoi(vDevPin[1]);
+            }
+            catch (const exception &e)
+            {
+                return -1;
+            }
+        }
+    }
+    else if (pinJson.is_number())
+        pin = pinJson;
+    else
+    {
+        return -1;
+    }
+
+    return 0;
 }
 
 void Config::readConfigFromFile(
@@ -69,57 +113,22 @@ void Config::readConfigFromFile(
     map<string, shared_ptr<Switch>> mSwitches;
     for (json::iterator itSw = config["switches"].begin(); itSw != config["switches"].end(); ++itSw)
     {
-        json outPin;
+        json pin;
         try
         {
-            outPin = itSw->at("outPin");
+            pin = itSw->at("pin");
         }
         catch (const json::out_of_range &e)
         {
-            cerr << "Warning: outPin not present in: " << *itSw << endl;
+            cerr << "Warning: pin not present in: " << *itSw << endl;
             continue;
         }
 
         uint8_t nPin = 0;
         uint8_t nDev = 0xFF;
-        static const char *invOutPinFormatMsg("Warning: outPin string has invalid format. Format: \"0.0\" or \"0\" "
-                                              "where first variant is <spi device>.<spi "
-                                              "device output pin> or second variant is just <output pin>");
-        if (outPin.is_string())
+        if (getPinFromJson(nPin, nDev, pin) < 0)
         {
-            vector<string> vDevPin;
-            splitString(string(outPin), '.', vDevPin);
-            if (vDevPin.size() == 1)
-            {
-                try
-                {
-                    nPin = stoi(vDevPin[0]);
-                }
-                catch (const exception &e)
-                {
-                    cerr << invOutPinFormatMsg << endl;
-                    continue;
-                }
-            }
-            else if (vDevPin.size() > 1)
-            {
-                try
-                {
-                    nDev = stoi(vDevPin[0]);
-                    nPin = stoi(vDevPin[1]);
-                }
-                catch (const exception &e)
-                {
-                    cerr << invOutPinFormatMsg << endl;
-                    continue;
-                }
-            }
-        }
-        else if (outPin.is_number())
-            nPin = outPin;
-        else
-        {
-            cerr << invOutPinFormatMsg << endl;
+            cerr << invPinFormatMsg << endl;
             continue;
         }
 
@@ -134,41 +143,11 @@ void Config::readConfigFromFile(
 
         uint8_t nFbPin = 0;
         uint8_t nFbDev = 0xFF;
-        static const char *invFbPinFormatMsg("Warning: feedbackPin string has invalid format. Format: \"0.0\" or \"0\" "
-                                             "where first variant is <spi device>.<spi "
-                                             "device input pin> or second variant is just <input pin>");
-        if (feedbackPin.is_string())
+        if (getPinFromJson(nFbPin, nFbDev, feedbackPin) < 0)
         {
-            vector<string> vDevPin;
-            splitString(string(feedbackPin), '.', vDevPin);
-            if (vDevPin.size() == 1)
-            {
-                try
-                {
-                    nFbPin = stoi(vDevPin[0]);
-                }
-                catch (const exception &e)
-                {
-                    cerr << invFbPinFormatMsg << endl;
-                    continue;
-                }
-            }
-            else if (vDevPin.size() > 1)
-            {
-                try
-                {
-                    nFbDev = stoi(vDevPin[0]);
-                    nFbPin = stoi(vDevPin[1]);
-                }
-                catch (const exception &e)
-                {
-                    cerr << invFbPinFormatMsg << endl;
-                    continue;
-                }
-            }
+            cerr << invFbPinFormatMsg << endl;
+            continue;
         }
-        else if (feedbackPin.is_number())
-            nFbPin = feedbackPin;
 
         Switch::Mode md = static_cast<Switch::Mode>(itSw->value("mode", Switch::Mode::CLASSIC));
         int impulseDuration = itSw->value("impulseDuration", 300);
@@ -198,12 +177,10 @@ void Config::readConfigFromFile(
     }
 
     // inputPins
-    map<uint8_t, shared_ptr<InPin>> inputPins;
-    for (json::iterator itInputPin = config["inputs"]["inputPins"].begin();
-         itInputPin != config["inputs"]["inputPins"].end();
-         ++itInputPin)
+    map<string, shared_ptr<InPin>> inputPins;
+    for (json::iterator itInputPin = config["inputPins"].begin(); itInputPin != config["inputPins"].end(); ++itInputPin)
     {
-        uint8_t inPin;
+        json inPin;
         try
         {
             inPin = itInputPin->at("pin");
@@ -214,20 +191,27 @@ void Config::readConfigFromFile(
             continue;
         }
 
+        uint8_t pin = 0;
+        uint8_t dev = 0xFF;
+        if (getPinFromJson(pin, dev, inPin) < 0)
+        {
+            cerr << invPinFormatMsg << endl;
+            continue;
+        }
+
         bool present = itInputPin->value("present", true);
         uint8_t id = present ? presentables.size() : -1;
-        shared_ptr<InPin> spInPin = make_shared<InPin>(id, itInputPin.key(), present, inPin);
-        inputPins[inPin] = spInPin;
+        shared_ptr<InPin> spInPin = make_shared<InPin>(id, itInputPin.key(), present, pin, dev);
+        inputPins[itInputPin.key()] = spInPin;
         loopables.push_back(spInPin);
         if (present)
             presentables.push_back(spInPin);
     }
 
     // triggers
-    for (auto &trigger : config["inputs"]["triggers"])
+    for (auto &trigger : config["triggers"])
     {
-        // cout << trigger << endl;
-        uint8_t inPin;
+        string inPin;
         try
         {
             inPin = trigger.at("inPin");
@@ -238,12 +222,12 @@ void Config::readConfigFromFile(
             continue;
         }
 
-        map<uint8_t, shared_ptr<InPin>>::iterator itr = inputPins.find(inPin);
+        map<string, shared_ptr<InPin>>::iterator itr = inputPins.find(inPin);
         if (itr == inputPins.end())
         {
-            shared_ptr<InPin> clInPin = make_shared<InPin>(-1, "nd", false, inPin);
-            itr = inputPins.insert(itr, pair<uint8_t, shared_ptr<InPin>>(inPin, clInPin));
-            loopables.push_back(clInPin);
+            cerr << "WARNING: inPin with name: " << inPin << " couldn't be found in inputPins." << endl
+                 << "Trigger won't be created." << endl;
+            continue;
         }
 
         vector<Trigger::SwitchAction> vSwitches;
@@ -254,7 +238,10 @@ void Config::readConfigFromFile(
         }
         catch (const exception &e)
         {
-            cout << "WARNING: Trigger: " << endl << trigger << endl << "Doesn't contain \"drives\" element." << endl;
+            cout << "WARNING: Trigger: " << endl
+                 << trigger << endl
+                 << "Doesn't contain \"drives\" element." << endl
+                 << "Trigger won't be created." << endl;
             continue;
         }
 

@@ -3,6 +3,17 @@
 Project goal is to have JSON based configuration file which specifies how IO pins on (currently only RPI supported) MySensors platform will behave.
 
 ## config.json
+
+Format overview:
+```json
+{
+    "switches": {...},
+    "inputs": {...},
+    "inputPins": {...},
+    "triggers": {...},
+}
+```
+
 ### switches
 Are the abstract configuration unit that specifies how output pin will behave.
 #### example:
@@ -11,13 +22,13 @@ Are the abstract configuration unit that specifies how output pin will behave.
     "out1": {
         "mode": 0,
         "impulseDuration": 500,
-        "outPin": 11,
+        "pin": 11,
         "present": true
     },
     "out2": {
         "mode": 1,
         "impulseDuration": 500,
-        "outPin": "0.9",
+        "pin": "0.9",
         "feedbackPin": 2,
         "present": true
     }
@@ -32,7 +43,7 @@ Are the abstract configuration unit that specifies how output pin will behave.
 
 **impulseDuration** - **(default: 300)** only applyed when **mode** is 1 (impulse) and its value specifies how long will impulse last
 
-**outPin**
+**pin**
 * number : HW IO pin which will be used as output pin 
 * string : 
   * format "0" same as **number**
@@ -63,31 +74,38 @@ Shared configuration for input elements.
 
 **multiMaxDelay** - maximum period in ms during which next press is counted into multipres signal
 
-#### inputPins
+### inputPins
 Abstract configuration unit which specifes some properties of how input pin should behave.
-Could ve specified here or will be created by trigger with defalut parameters.
-##### example:
+#### example:
 ```json
 "inputPins": {
     "inPin7": {
         "pin": 7,
         "present": true
+    },
+    "inSPI02": {
+        "present": true,
+        "pin": "0.2"
     }
 }
 ```
-##### description:
-**inPin7** - name of the input pin. Send to MySensors cotroller if **present** is true.
+#### description:
+**inPin7** - name of the input pin. Used as identifier for triggers and is send to MySensors cotroller if **present** is true.
 
-**pin** - HW pin which will be used **WARNING** internal pullup is used. If pin driven with buton put other end of button against ground
+**pin** - **WARNING** internal pullup is used if pin is driven by buton put other end of the button against the ground.
+* number : HW IO pin which will be used as input pin.
+* string : 
+  * format "0" same as **number**
+  * format "0.0" first number means SPI0 connected device second number is HW input pin of SPI device.
 
 **present** - **(default: true)** boolean property which specify if this input pin will be presented (usable) in MySensors controller
 
-#### triggers
+### triggers
 Abstract configuration unit which can specify how input actions are transformed to output.
-##### example:
+#### example:
 ```json
 "vtl1": {
-    "inPin": 7,
+    "inPin": "inPin7",
     "event": 3,
     "count": 1,
     "drives": [
@@ -98,10 +116,10 @@ Abstract configuration unit which can specify how input actions are transformed 
     ]
 }
 ```
-##### description:
+#### description:
 **vtl1** - name of the trigger. Not used for presentation.
 
-**inPin** - input pin used for this trigger. If input pin behavior is specified in **inputPin** section then that one is used. If not default one is created. Mapping is done by HW pin number.
+**inPin** - name of the input pin used for this trigger.
 
 **event** - specifies which input pin event should this trigger listen to
 * **0 (down)** - the input pin sate goes to down

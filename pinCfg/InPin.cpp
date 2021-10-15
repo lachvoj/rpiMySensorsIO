@@ -1,6 +1,8 @@
 #include <Arduino.h>
 
 #include "InPin.hpp"
+#include "PinLocalReader.hpp"
+#include "PinSPIReader.hpp"
 
 namespace pinCfg
 {
@@ -17,17 +19,14 @@ void InPin::setMulticlickMaxDelayMs(uint64_t multikMaxDelay)
     InPin::multiclickMaxDelayMs = multikMaxDelay;
 }
 
-InPin::InPin(int id, const string &name, bool present, uint8_t inputPin)
-: MySensorsPresent(id, name, present), inputPin_(inputPin), lastPinState_(true)
+InPin::InPin(int id, const string &name, bool present, uint8_t inputPin, uint8_t inputDevice)
+: MySensorsPresent(id, name, present), lastPinState_(true)
 {
     state_ = false;
-    pinMode(inputPin_, BCM2835_GPIO_FSEL_INPT);
-    digitalWrite(inputPin_, HIGH); // enabling pullup
-}
-
-uint8_t InPin::getInputPin() const
-{
-    return inputPin_;
+    if (inputDevice == 0xFF)
+        pinReader_ = unique_ptr<PinLocalReader>(new PinLocalReader(inputPin));
+    else
+        pinReader_ = unique_ptr<PinSPIReader>(new PinSPIReader(inputPin, inputDevice));
 }
 
 void InPin::addSubscriber(shared_ptr<IPinSubscriber> &subscriber)
@@ -54,7 +53,7 @@ void InPin::loop(uint64_t ms)
 
     if (pinState_ != PinState::DEBOUNCEDOWN && pinState_ != PinState::DEBOUNCEUP)
     {
-        bool pinState = (bool)digitalRead(inputPin_);
+        bool pinState = static_cast<bool>(pinReader_->readPin());
         if (pinState != lastPinState_)
             change = pinState ? Change::DOWN : Change::UP; // pull up inverted logic!!!
         lastPinState_ = pinState;
