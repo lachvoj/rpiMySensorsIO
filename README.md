@@ -35,13 +35,13 @@ Are the abstract configuration unit that specifies how output pin will behave.
 }
 ```
 #### description:
-**out1** - name of the switch. Send to MySensors cotroller if **present** is true.
+**out1** - name of the switch. Send to MySensors controller if **present** is true.
 
 **mode**:
 * 0 : **(default)** standard mode if the switch is activated then output pin is set to state 1 until switch is active.
-* 1 : impuse mode means that if the switch is activated or deactivated output pin will do impulse from 0 to 1 and back to 0 for **impulseDuration** specified time period
+* 1 : impulse mode means that if the switch is activated or deactivated output pin will do impulse from 0 to 1 and back to 0 for **impulseDuration** specified time period
 
-**impulseDuration** - **(default: 300)** only applyed when **mode** is 1 (impulse) and its value specifies how long will impulse last
+**impulseDuration** - **(default: 300)** only applied when **mode** is 1 (impulse) and its value specifies how long will impulse last
 
 **pin**
 * number : HW IO pin which will be used as output pin 
@@ -59,7 +59,7 @@ Are the abstract configuration unit that specifies how output pin will behave.
 **present** - **(default: true)** boolean property which specify if this switch will be presented (usable) in MySensors controller
 
 ### inputs
-Imputs related suff
+Imputs related stuff
 #### config
 Shared configuration for input elements.
 ##### example:
@@ -72,10 +72,10 @@ Shared configuration for input elements.
 ##### description:
 **debounce** - debounce interval in ms
 
-**multiMaxDelay** - maximum period in ms during which next press is counted into multipres signal
+**multiMaxDelay** - maximum period in ms during which next press is counted into multipress signal
 
 ### inputPins
-Abstract configuration unit which specifes some properties of how input pin should behave.
+Abstract configuration unit which specifies some properties of how input pin should behave.
 #### example:
 ```json
 "inputPins": {
@@ -90,9 +90,9 @@ Abstract configuration unit which specifes some properties of how input pin shou
 }
 ```
 #### description:
-**inPin7** - name of the input pin. Used as identifier for triggers and is send to MySensors cotroller if **present** is true.
+**inPin7** - name of the input pin. Used as identifier for triggers and is send to MySensors controller if **present** is true.
 
-**pin** - **WARNING** internal pullup is used if pin is driven by buton put other end of the button against the ground.
+**pin** - **WARNING** internal pullup is used if pin is driven by button put other end of the button against the ground.
 * number : HW IO pin which will be used as input pin.
 * string : 
   * format "0" same as **number**
@@ -127,7 +127,7 @@ Abstract configuration unit which can specify how input actions are transformed 
 * **2 (long)** - the input pin state goes to long which means that input pin is activated for period more then **multiMaxDelay** specifies
 * **3 (multi)** - the input pin was pressed by property **"count"** specified times. 
 
-**count** - applies when trigger evetn multi is used and specifies count of pin activations to activate trigger
+**count** - applies when trigger event multi is used and specifies count of pin activations to activate trigger
 
 **drives** - array of objects which are driven by this trigger
 * **switch** - name of the switch which is driven by this trigger

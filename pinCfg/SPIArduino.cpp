@@ -11,7 +11,7 @@ SPIArduino::SPIArduino()
 {
     if (!instance_)
     {
-        SPIDEVClass::begin();
+        SPIDEVClass::begin(10);
         SPIDEVClass::setClockDivider(SPI_CLOCK_DIV16);
         instance_ = this;
     }
@@ -32,7 +32,10 @@ uint8_t SPIArduino::sendSync(uint8_t data, uint8_t dev)
         throw "Uninitialized SPI connection!";
 
     if (SPIArduino::lastDev_ != dev)
+    {
         SPIDEVClass::chipSelect(static_cast<int>(dev));
+        lastDev_ = dev;
+    }
 
     uint8_t ret = SPIDEVClass::transfer(data);
     if (ret == 0xff)

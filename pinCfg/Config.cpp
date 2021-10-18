@@ -10,7 +10,6 @@
 #include "Switch.hpp"
 #include "Trigger.hpp"
 
-
 namespace pinCfg
 {
 const char *Config::invPinFormatMsg("Warning: pin string has invalid format. Format: \"0.0\" or \"0\" "
@@ -140,18 +139,24 @@ void Config::readConfigFromFile(
         catch (const json::out_of_range &e)
         {
         }
+        catch (...)
+        {
+        }
 
         uint8_t nFbPin = 0;
         uint8_t nFbDev = 0xFF;
-        if (getPinFromJson(nFbPin, nFbDev, feedbackPin) < 0)
+        if (!feedbackPin.is_null())
         {
-            cerr << invFbPinFormatMsg << endl;
-            continue;
+            if (getPinFromJson(nFbPin, nFbDev, feedbackPin) < 0)
+            {
+                cerr << invFbPinFormatMsg << endl;
+                continue;
+            }
         }
 
         Switch::Mode md = static_cast<Switch::Mode>(itSw->value("mode", Switch::Mode::CLASSIC));
         int impulseDuration = itSw->value("impulseDuration", 300);
-        bool present = itSw->value("present", true);
+        bool present = itSw->value("present", false);
         uint8_t id = present ? presentables.size() : -1;
         shared_ptr<Switch> spSw =
             make_shared<Switch>(id, itSw.key(), present, md, nPin, nDev, nFbPin, nFbDev, impulseDuration);
@@ -199,7 +204,7 @@ void Config::readConfigFromFile(
             continue;
         }
 
-        bool present = itInputPin->value("present", true);
+        bool present = itInputPin->value("present", false);
         uint8_t id = present ? presentables.size() : -1;
         shared_ptr<InPin> spInPin = make_shared<InPin>(id, itInputPin.key(), present, pin, dev);
         inputPins[itInputPin.key()] = spInPin;
